@@ -1,0 +1,147 @@
+@model ListVm
+@{
+    ViewData["Title"] = "Incidentes";
+    var isAdmin = User.IsInRole(Catalog.Admin);
+    var d = Model.Data;
+    var f = Model.F;
+}
+<div class="page-head">
+  <h1>Incidentes</h1>
+  @if (isAdmin)
+  {
+    <a class="btn btn-primary" asp-controller="Incidents" asp-action="New">+ Nuevo incidente</a>
+  }
+</div>
+
+<form class="filters card" method="get" asp-controller="Incidents" asp-action="Index" aria-label="Filtros">
+  <div class="filter-grid">
+    <div>
+      <label for="f-restaurante">Restaurante</label>
+      <select id="f-restaurante" name="restaurante">
+        <option value="">Todos</option>
+        @foreach (var r in Model.Restaurants)
+        {
+          <option value="@r.Id" selected="@(f.Restaurant == r.Id)">@r.Name</option>
+        }
+      </select>
+    </div>
+    <div>
+      <label for="f-prioridad">Prioridad</label>
+      <select id="f-prioridad" name="prioridad">
+        <option value="">Todas</option>
+        @foreach (var (k, v) in Catalog.Priorities)
+        {
+          <option value="@k" selected="@(f.Priority == k)">@v</option>
+        }
+      </select>
+    </div>
+    <div>
+      <label for="f-estado">Estado</label>
+      <select id="f-estado" name="estado">
+        <option value="">Todos</option>
+        <option value="abiertos" selected="@(f.Status == "abiertos")">Abiertos (nuevo + en gestión)</option>
+        @foreach (var (k, v) in Catalog.Statuses)
+        {
+          <option value="@k" selected="@(f.Status == k)">@v</option>
+        }
+      </select>
+    </div>
+    <div>
+      <label for="f-categoria">Categoría</label>
+      <select id="f-categoria" name="categoria">
+        <option value="">Todas</option>
+        @foreach (var (k, v) in Catalog.Categories)
+        {
+          <option value="@k" selected="@(f.Category == k)">@v</option>
+        }
+      </select>
+    </div>
+    <div>
+      <label for="f-responsable">Responsable</label>
+      <select id="f-responsable" name="responsable">
+        <option value="">Todos</option>
+        @foreach (var n in Model.Responsibles)
+        {
+          <option value="@n" selected="@(f.Responsible != "" && f.Responsible != IncidentService.NoResponsible && IncidentService.RespKey(f.Responsible) == IncidentService.RespKey(n))">@n</option>
+        }
+        @if (Model.AnyUnassigned)
+        {
+          <option value="@IncidentService.NoResponsible" selected="@(f.Responsible == IncidentService.NoResponsible)">Sin asignar</option>
+        }
+      </select>
+    </div>
+    <div class="filter-q">
+      <label for="f-q">Buscar (ID o texto)</label>
+      <input id="f-q" name="q" type="search" maxlength="80" value="@f.Q" placeholder="INC-0007 o palabra">
+    </div>
+  </div>
+  <div class="filter-actions">
+    <button class="btn btn-primary" type="submit">Filtrar</button>
+    @if (f.Active)
+    {
+      <a class="btn btn-ghost" asp-controller="Incidents" asp-action="Index">Limpiar filtros</a>
+    }
+    <span class="muted count" aria-live="polite">@d.Total @Fmt.Plural(d.Total, "resultado", "resultados")</span>
+  </div>
+</form>
+
+@if (d.Rows.Count > 0)
+{
+  <div class="table-wrap">
+  <table class="table stack">
+    <thead>
+      <tr><th>ID</th><th>Restaurante</th><th>Categoría</th><th>Descripción</th><th>Prioridad</th><th>Estado</th><th>Fecha</th><th>Responsable</th></tr>
+    </thead>
+    <tbody>
+      @foreach (var row in d.Rows)
+      {
+        var i = row.Incident;
+        <tr>
+          <td data-label="ID"><a asp-controller="Incidents" asp-action="Detail" asp-route-id="@i.Id"><strong>@Fmt.Code(i.Id)</strong></a></td>
+          <td data-label="Restaurante">@row.RestaurantName</td>
+          <td data-label="Categoría">@Catalog.CategoryLabel(i.Category)</td>
+          <td data-label="Descripción" class="desc">@Fmt.Truncate(i.Description, 90)</td>
+          <td data-label="Prioridad"><partial name="_Pri" model="i.Priority" /></td>
+          <td data-label="Estado"><partial name="_Stat" model="i.Status" />@if (i.ReopenCount > 0) { <text> </text><span class="reopen" title="Veces reabierto">↻@i.ReopenCount</span> }</td>
+          <td data-label="Fecha">@Fmt.LocalDt(i.CreatedAt)</td>
+          <td data-label="Responsable">@(i.Responsible == "" ? "— sin asignar" : i.Responsible)</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  </div>
+
+  @if (d.Pages > 1)
+  {
+    <nav class="pager" aria-label="Paginación">
+      @if (d.Page > 1)
+      {
+        <a class="btn btn-ghost" asp-controller="Incidents" asp-action="Index" asp-all-route-data="Model.RouteData(d.Page - 1)">← Anterior</a>
+      }
+      <span>Página @d.Page de @d.Pages</span>
+      @if (d.Page < d.Pages)
+      {
+        <a class="btn btn-ghost" asp-controller="Incidents" asp-action="Index" asp-all-route-data="Model.RouteData(d.Page + 1)">Siguiente →</a>
+      }
+    </nav>
+  }
+}
+else if (!d.AnyIncidents)
+{
+  <div class="empty card">
+    <h2>Aún no hay incidentes registrados</h2>
+    <p>Cuando se registre el primero aparecerá aquí.</p>
+    @if (isAdmin)
+    {
+      <a class="btn btn-primary" asp-controller="Incidents" asp-action="New">Registrar el primero</a>
+    }
+  </div>
+}
+else
+{
+  <div class="empty card">
+    <h2>Ningún incidente coincide con los filtros</h2>
+    <p>Pruebe con otros criterios o quite los filtros.</p>
+    <a class="btn btn-primary" asp-controller="Incidents" asp-action="Index">Limpiar filtros</a>
+  </div>
+}

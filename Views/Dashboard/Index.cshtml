@@ -1,0 +1,258 @@
+@model DashboardVm
+@{
+    ViewData["Title"] = "Dashboard";
+    var d = Model.D;
+}
+<div class="page-head">
+  <h1>Dashboard</h1>
+  <nav class="seg" aria-label="Periodo de análisis">
+    <a asp-controller="Dashboard" asp-action="Index" aria-current="@(Model.Dias == null ? "true" : null)">Todo</a>
+    @foreach (var n in new[] { 7, 30, 90 })
+    {
+      <a asp-controller="Dashboard" asp-action="Index" asp-route-dias="@n" aria-current="@(Model.Dias == n ? "true" : null)">@n días</a>
+    }
+  </nav>
+</div>
+
+@if (d.Total == 0)
+{
+  <div class="empty card">
+    <h2>Sin incidentes en este periodo</h2>
+    <p>No hay datos para calcular métricas. Pruebe con un periodo más amplio.</p>
+    <a class="btn btn-primary" asp-controller="Dashboard" asp-action="Index">Ver todo</a>
+  </div>
+}
+else
+{
+  <section class="kpis" aria-label="Totales">
+    <a class="kpi" asp-controller="Incidents" asp-action="Index">
+      <span class="kpi-n">@d.Total</span><span class="kpi-l">Total</span>
+    </a>
+    <a class="kpi kpi-crit" asp-controller="Incidents" asp-action="Index" asp-route-prioridad="critica" asp-route-estado="abiertos">
+      <span class="kpi-n">@d.CriticosAbiertos</span><span class="kpi-l">Críticos abiertos</span>
+      <span class="kpi-s">@d.CriticosTotal críticos en total</span>
+    </a>
+    <a class="kpi" asp-controller="Incidents" asp-action="Index" asp-route-estado="abiertos">
+      <span class="kpi-n">@d.Abiertos</span><span class="kpi-l">Abiertos</span>
+      <span class="kpi-s">nuevos + en gestión</span>
+    </a>
+    <a class="kpi" asp-controller="Incidents" asp-action="Index" asp-route-estado="resuelto">
+      <span class="kpi-n">@d.Resueltos</span><span class="kpi-l">Resueltos</span>
+      <span class="kpi-s">pendientes de cierre</span>
+    </a>
+    <a class="kpi kpi-ok" asp-controller="Incidents" asp-action="Index" asp-route-estado="cerrado">
+      <span class="kpi-n">@d.Cerrados</span><span class="kpi-l">Cerrados</span>
+    </a>
+  </section>
+
+  <div class="dash-grid">
+
+    <section class="card highlight span-2" aria-labelledby="h-top">
+      <h2 id="h-top">Incidente más repetitivo</h2>
+      @if (d.TopCategory != null)
+      {
+        <p class="big">@d.TopCategory.Label</p>
+        <p class="muted">@d.TopCategory.Count de @d.Total incidentes (@(d.TopCategory.Pct)%)</p>
+      }
+      <ul class="bars">
+        @foreach (var c in d.Categories)
+        {
+          <li>
+            <a class="bar-label" asp-controller="Incidents" asp-action="Index" asp-route-categoria="@c.Key">@c.Label</a>
+            @await Html.PartialAsync("_Bar", new BarVm(c.Bar, c.Label + ": " + c.Count + " incidentes"))
+            <span class="bar-val">@c.Count · @(c.Pct)%</span>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="card" aria-labelledby="h-att">
+      <h2 id="h-att">Tiempo de atención</h2>
+      <p class="muted small">Desde que llega el ticket hasta que se empieza a gestionar.</p>
+      <dl class="metrics">
+        <div><dt>Promedio</dt><dd>@Fmt.Duration(d.Atencion.Avg)</dd></div>
+        <div><dt>Mediana</dt><dd>@Fmt.Duration(d.Atencion.Median)</dd></div>
+        <div><dt>Máximo</dt><dd>@Fmt.Duration(d.Atencion.Max)</dd></div>
+      </dl>
+      <p class="muted small">Sobre @d.Atencion.N @Fmt.Plural(d.Atencion.N, "incidente atendido", "incidentes atendidos").</p>
+      <p class="waiting @(d.EsperandoN > 0 ? "warn" : "")">
+        @if (d.EsperandoN > 0)
+        {
+          <strong>@d.EsperandoN</strong> <text>sin atender; el más antiguo lleva @Fmt.Duration(d.EsperandoOldest).</text>
+          <a asp-controller="Incidents" asp-action="Index" asp-route-estado="nuevo">Ver</a>
+        }
+        else { <text>No hay incidentes sin atender.</text> }
+      </p>
+    </section>
+
+    <section class="card" aria-labelledby="h-sol">
+      <h2 id="h-sol">Tiempo de solución</h2>
+      <p class="muted small">Desde que llega el ticket hasta que queda resuelto.</p>
+      <dl class="metrics">
+        <div><dt>Promedio</dt><dd>@Fmt.Duration(d.Solucion.Avg)</dd></div>
+        <div><dt>Mediana</dt><dd>@Fmt.Duration(d.Solucion.Median)</dd></div>
+        <div><dt>Máximo</dt><dd>@Fmt.Duration(d.Solucion.Max)</dd></div>
+      </dl>
+      <p class="muted small">Sobre @d.Solucion.N @Fmt.Plural(d.Solucion.N, "incidente resuelto o cerrado", "incidentes resueltos o cerrados").</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-rep">
+      <h2 id="h-rep">Casos repetidos</h2>
+      <p class="big">@d.RepetidosN <span class="big-sub">(@(d.RepetidosPct)%)</span></p>
+      <p class="muted small">Mismo restaurante y categoría que otro incidente de los @d.Ventana días previos.</p>
+      @if (d.Reincidencias.Count > 0)
+      {
+        <h3>Reincidencias</h3>
+        <ul class="plain">
+          @foreach (var g in d.Reincidencias)
+          {
+            <li><strong>@Fmt.ShortName(g.Restaurante)</strong> · @g.Categoria<br>
+              <span class="muted">@g.Incidentes incidentes, @g.Repetidos @Fmt.Plural(g.Repetidos, "repetido", "repetidos")</span></li>
+          }
+        </ul>
+      }
+      else
+      {
+        <p class="muted">No hay reincidencias en este periodo.</p>
+      }
+    </section>
+
+    <section class="card" aria-labelledby="h-reab">
+      <h2 id="h-reab">Reabiertos</h2>
+      <p class="big">@d.ReabiertosN <span class="big-sub">@Fmt.Plural(d.ReabiertosN, "incidente", "incidentes")</span></p>
+      <p class="muted small">@d.ReabiertosTotal @Fmt.Plural(d.ReabiertosTotal, "reapertura", "reaperturas") en total.</p>
+      @if (d.Reabiertos.Count > 0)
+      {
+        <ul class="plain">
+          @foreach (var r in d.Reabiertos)
+          {
+            <li><a asp-controller="Incidents" asp-action="Detail" asp-route-id="@r.Id">@Fmt.Code(r.Id)</a> · @r.Categoria · @(r.Veces)×<br>
+              <span class="muted">@Fmt.ShortName(r.Restaurante)</span></li>
+          }
+        </ul>
+      }
+      else
+      {
+        <p class="muted">Ningún incidente reabierto.</p>
+      }
+    </section>
+
+    <section class="card span-3" aria-labelledby="h-resp">
+      <h2 id="h-resp">Incidentes por responsable</h2>
+      <p class="muted small">Cuántos tickets tiene cada persona, en qué categorías y cuánto tarda en atenderlos y resolverlos. Los abiertos son nuevos + en gestión.</p>
+      <div class="table-wrap">
+      <table class="table stack">
+        <thead><tr><th>Responsable</th><th class="num">Total</th><th class="num">Abiertos</th><th class="num">Críticos abiertos</th><th class="num">Resueltos y cerrados</th><th class="num">Atención (prom.)</th><th class="num">Solución (prom.)</th><th>Categorías</th></tr></thead>
+        <tbody>
+          @foreach (var r in d.Responsables)
+          {
+            <tr>
+              <td data-label="Responsable" class="who-cell">
+                <a asp-controller="Incidents" asp-action="Index" asp-route-responsable="@r.FilterValue"><strong>@r.Name</strong></a>
+                @await Html.PartialAsync("_Bar", new BarVm(r.Bar, r.Name + ": " + r.Total + " incidentes"))
+              </td>
+              <td data-label="Total" class="num">@r.Total</td>
+              <td data-label="Abiertos" class="num"><strong>@r.Abiertos</strong></td>
+              <td data-label="Críticos abiertos" class="num">@r.CriticosAbiertos</td>
+              <td data-label="Resueltos y cerrados" class="num">@(r.Resueltos + r.Cerrados)</td>
+              <td data-label="Atención (prom.)" class="num">@Fmt.Duration(r.Atencion)</td>
+              <td data-label="Solución (prom.)" class="num">@Fmt.Duration(r.Solucion)</td>
+              <td data-label="Categorías">
+                <div class="chips">
+                  @foreach (var (label, count) in r.Categorias)
+                  {
+                    <span class="chip">@label <b>@count</b></span>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <section class="card span-2" aria-labelledby="h-cat">
+      <h2 id="h-cat">Por categoría</h2>
+      <div class="table-wrap">
+      <table class="table stack">
+        <thead><tr><th>Categoría</th><th class="num">Incidentes</th><th class="num">Repetidos</th><th class="num">Atención (prom.)</th><th class="num">Solución (prom.)</th></tr></thead>
+        <tbody>
+          @foreach (var c in d.PerCategory)
+          {
+            <tr>
+              <td data-label="Categoría">@c.Label</td>
+              <td data-label="Incidentes" class="num">@c.Count</td>
+              <td data-label="Repetidos" class="num">@c.Repetidos</td>
+              <td data-label="Atención (prom.)" class="num">@Fmt.Duration(c.Atencion)</td>
+              <td data-label="Solución (prom.)" class="num">@Fmt.Duration(c.Solucion)</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-rest">
+      <h2 id="h-rest">Por restaurante</h2>
+      <ul class="bars">
+        @foreach (var r in d.Restaurants)
+        {
+          <li>
+            <a class="bar-label" asp-controller="Incidents" asp-action="Index" asp-route-restaurante="@r.Key">@Fmt.ShortName(r.Label)</a>
+            @await Html.PartialAsync("_Bar", new BarVm(r.Bar, r.Label + ": " + r.Count + " incidentes"))
+            <span class="bar-val">@r.Count</span>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="card" aria-labelledby="h-ast">
+      <h2 id="h-ast">Asistente de triaje</h2>
+      @if (d.AsistenteN > 0)
+      {
+        <p class="muted small">Qué tanto coincide lo registrado con la sugerencia automática (sobre @d.AsistenteN incidentes).</p>
+        <dl class="metrics">
+          <div><dt>Categoría</dt><dd>@(d.AsistenteCategoriaPct)%</dd></div>
+          <div><dt>Prioridad</dt><dd>@(d.AsistentePrioridadPct)%</dd></div>
+        </dl>
+        <p class="muted small">Un porcentaje bajo indica que las reglas necesitan ajuste o que las personas las corrigen a menudo.</p>
+      }
+      else
+      {
+        <p class="muted">Aún no hay datos del asistente en este periodo.</p>
+      }
+    </section>
+
+    <section class="card span-2" aria-labelledby="h-pri">
+      <h2 id="h-pri">Por prioridad</h2>
+      <div class="table-wrap">
+      <table class="table stack">
+        <thead><tr><th>Prioridad</th><th class="num">Incidentes</th><th class="num">Atención</th><th class="num">Solución</th></tr></thead>
+        <tbody>
+          @foreach (var p in d.PerPriority)
+          {
+            <tr>
+              <td data-label="Prioridad"><span class="badge pri-@p.Key">@p.Label</span></td>
+              <td data-label="Incidentes" class="num">@p.Count</td>
+              <td data-label="Atención" class="num">@Fmt.Duration(p.Atencion)</td>
+              <td data-label="Solución" class="num">@Fmt.Duration(p.Solucion)</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      </div>
+    </section>
+  </div>
+
+  <details class="card defs">
+    <summary>Cómo se calculan estas métricas</summary>
+    <ul>
+      <li><strong>Abiertos:</strong> estados nuevo y en gestión. <strong>Resueltos:</strong> ya solucionados pero sin cerrar. <strong>Críticos abiertos:</strong> prioridad crítica y aún abiertos.</li>
+      <li><strong>Tiempo de atención:</strong> creación → primera gestión (o resolución directa).</li>
+      <li><strong>Tiempo de solución:</strong> creación → resuelto. Si el incidente se reabre, se vuelve a medir con su nueva resolución; el historial conserva los eventos anteriores.</li>
+      <li><strong>Repetido:</strong> otro incidente del mismo restaurante y categoría en los @d.Ventana días anteriores (se evalúa sobre todo el historial).</li>
+      <li>Las horas se muestran en hora de Costa Rica (UTC−6).</li>
+    </ul>
+  </details>
+}

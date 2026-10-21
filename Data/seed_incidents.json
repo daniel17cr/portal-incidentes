@@ -1,0 +1,91 @@
+{
+  "_nota": "DATOS FICTICIOS DE EJEMPLO. Ninguna sucursal, persona ni incidente corresponde a un caso real. 'days_ago' es relativo al momento de sembrar la base; 'after_min' son minutos desde la creación del incidente.",
+  "restaurants": [
+    {"code": "DEMO-01", "name": "Sucursal Demo Centro (dato de ejemplo)"},
+    {"code": "DEMO-02", "name": "Sucursal Demo Escazú (dato de ejemplo)"},
+    {"code": "DEMO-03", "name": "Sucursal Demo Heredia (dato de ejemplo)"},
+    {"code": "DEMO-04", "name": "Sucursal Demo Cartago (dato de ejemplo)"},
+    {"code": "DEMO-05", "name": "Sucursal Demo Liberia (dato de ejemplo)"}
+  ],
+  "incidents": [
+    {"restaurant": "DEMO-01", "category": "kiosco", "priority": "critica", "responsible": "Ana Mora",
+     "description": "Los kioscos 1 y 2 no procesan pedidos desde las 7:30 p. m.; el mostrador funciona con normalidad.",
+     "days_ago": 9.0,
+     "timeline": [{"after_min": 12, "action": "gestionar"}, {"after_min": 95, "action": "resolver", "note": "Se reinició el servicio de pedidos del kiosco."}, {"after_min": 300, "action": "cerrar"}]},
+
+    {"restaurant": "DEMO-02", "category": "kiosco", "priority": "critica", "responsible": "Luis Rojas",
+     "description": "El kiosco 1 se congela al confirmar el pedido y los pedidos no llegan a cocina.",
+     "days_ago": 8.0,
+     "timeline": [{"after_min": 20, "action": "gestionar"}, {"after_min": 140, "action": "resolver", "note": "Actualización de la aplicación del kiosco."}, {"after_min": 600, "action": "cerrar"}]},
+
+    {"restaurant": "DEMO-01", "category": "kiosco", "priority": "alta", "responsible": "Ana Mora",
+     "description": "El kiosco 2 muestra error al pagar con tarjeta, de forma intermitente.",
+     "days_ago": 6.0,
+     "timeline": [{"after_min": 35, "action": "gestionar"}, {"after_min": 400, "action": "resolver"}, {"after_min": 1500, "action": "reabrir", "note": "Reaparece el fallo de pago el día siguiente."}, {"after_min": 1800, "action": "resolver", "note": "Se reemplazó el cable del lector de tarjetas."}, {"after_min": 2000, "action": "cerrar"}]},
+
+    {"restaurant": "DEMO-03", "category": "pos", "priority": "alta", "responsible": "Equipo N1",
+     "description": "La caja 2 no responde al cobrar con tarjeta, el datáfono rechaza todas las transacciones.",
+     "days_ago": 5.5,
+     "timeline": [{"after_min": 18, "action": "gestionar"}, {"after_min": 210, "action": "resolver"}, {"after_min": 900, "action": "cerrar"}]},
+
+    {"restaurant": "DEMO-03", "category": "impresoras", "priority": "media", "responsible": "Equipo N1",
+     "description": "La impresora de comandas de cocina no imprime, falta papel y muestra luces rojas.",
+     "days_ago": 5.0,
+     "timeline": [{"after_min": 25, "action": "gestionar"}, {"after_min": 80, "action": "resolver"}, {"after_min": 700, "action": "cerrar"}]},
+
+    {"restaurant": "DEMO-02", "category": "conectividad", "priority": "critica", "responsible": "Luis Rojas",
+     "description": "Sin internet en todo el restaurante desde las 6:00 p. m.; el router no enciende.",
+     "days_ago": 4.0,
+     "timeline": [{"after_min": 8, "action": "gestionar"}, {"after_min": 75, "action": "resolver", "note": "Se cambió la fuente de poder del router."}, {"after_min": 200, "action": "cerrar"}]},
+
+    {"restaurant": "DEMO-04", "category": "menu_digital", "priority": "baja", "responsible": "Equipo N1",
+     "description": "La foto del combo familiar está desactualizada en la pantalla del menú; no urgente.",
+     "days_ago": 4.0,
+     "timeline": [{"after_min": 600, "action": "gestionar"}, {"after_min": 900, "action": "resolver"}, {"after_min": 1500, "action": "cerrar"}]},
+
+    {"restaurant": "DEMO-04", "category": "facturacion", "priority": "alta", "responsible": "Ana Mora",
+     "description": "Factura electrónica rechazada: error de consecutivo en varias ventas del turno de la tarde.",
+     "days_ago": 3.0,
+     "timeline": [{"after_min": 25, "action": "gestionar"}, {"after_min": 330, "action": "resolver"}, {"after_min": 800, "action": "cerrar"}]},
+
+    {"restaurant": "DEMO-05", "category": "pos", "priority": "media", "responsible": "Luis Rojas",
+     "description": "El cierre de caja queda descuadrado por una diferencia en las ventas con tarjeta.",
+     "days_ago": 3.0,
+     "timeline": [{"after_min": 60, "action": "gestionar"}, {"after_min": 500, "action": "resolver"}]},
+
+    {"restaurant": "DEMO-01", "category": "impresoras", "priority": "media", "responsible": "Equipo N1",
+     "description": "La impresora del mostrador imprime con líneas borrosas, posible rollo de papel defectuoso.",
+     "days_ago": 2.5,
+     "timeline": [{"after_min": 45, "action": "gestionar"}]},
+
+    {"restaurant": "DEMO-02", "category": "conectividad", "priority": "alta", "responsible": "Luis Rojas",
+     "description": "Wi-Fi intermitente: la tablet de delivery pierde la conexión varias veces por hora.",
+     "days_ago": 2.0,
+     "timeline": [{"after_min": 30, "action": "gestionar"}, {"after_min": 240, "action": "resolver"}]},
+
+    {"restaurant": "DEMO-05", "category": "menu_digital", "priority": "media", "responsible": "Ana Mora",
+     "description": "La pantalla del menú muestra precios distintos a los del POS en tres productos.",
+     "days_ago": 1.5,
+     "timeline": [{"after_min": 90, "action": "gestionar"}]},
+
+    {"restaurant": "DEMO-03", "category": "kiosco", "priority": "alta", "responsible": "",
+     "description": "El kiosco 1 no enciende y la pantalla queda negra después de una actualización.",
+     "days_ago": 1.0,
+     "timeline": []},
+
+    {"restaurant": "DEMO-01", "category": "conectividad", "priority": "media", "responsible": "",
+     "description": "El router va lento por la noche; hay latencia alta en la red de los kioscos.",
+     "days_ago": 0.85,
+     "timeline": []},
+
+    {"restaurant": "DEMO-04", "category": "kiosco", "priority": "critica", "responsible": "Luis Rojas",
+     "description": "El kiosco no procesa pedidos: todos los pedidos fallan al confirmar.",
+     "days_ago": 0.25,
+     "timeline": [{"after_min": 10, "action": "gestionar"}]},
+
+    {"restaurant": "DEMO-02", "category": "facturacion", "priority": "media", "responsible": "",
+     "description": "Comprobante electrónico sin clave numérica; el cliente solicita una copia.",
+     "days_ago": 0.12,
+     "timeline": []}
+  ]
+}

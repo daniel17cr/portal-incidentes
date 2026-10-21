@@ -1,0 +1,93 @@
+@model FormVm
+@{
+    var title = Model.IsNew ? "Nuevo incidente" : $"Editar {Fmt.Code(Model.Incident!.Id)}";
+    ViewData["Title"] = title;
+}
+<div class="page-head">
+  <h1>@title</h1>
+  @if (Model.IsNew)
+  {
+    <a class="btn btn-ghost" asp-controller="Incidents" asp-action="Index">Cancelar</a>
+  }
+  else
+  {
+    <a class="btn btn-ghost" asp-controller="Incidents" asp-action="Detail" asp-route-id="@Model.Incident!.Id">Cancelar</a>
+  }
+</div>
+
+<div class="form-layout">
+  @{
+    var formAction = Model.IsNew ? "Create" : "Update";
+  }
+  <form class="card form" method="post" novalidate asp-controller="Incidents" asp-action="@formAction" asp-route-id="@(Model.IsNew ? null : Model.Incident!.Id.ToString())">
+
+    <label for="restaurant_id">Restaurante</label>
+    <select id="restaurant_id" name="RestaurantId" required aria-invalid="@(Model.Errors.ContainsKey("restaurant_id") ? "true" : null)" aria-describedby="@(Model.Errors.ContainsKey("restaurant_id") ? "err-restaurant_id" : null)">
+      <option value="">Seleccione…</option>
+      @foreach (var r in Model.Restaurants)
+      {
+        <option value="@r.Id" selected="@(Model.V("restaurant_id") == r.Id.ToString())">@r.Name</option>
+      }
+    </select>
+    @if (Model.Errors.TryGetValue("restaurant_id", out var e1)) { <p class="field-error" id="err-restaurant_id">@e1</p> }
+
+    <div class="two-col">
+      <div>
+        <label for="category">Categoría</label>
+        <select id="category" name="Category" required aria-invalid="@(Model.Errors.ContainsKey("category") ? "true" : null)" aria-describedby="@(Model.Errors.ContainsKey("category") ? "err-category" : null)">
+          <option value="">Seleccione…</option>
+          @foreach (var (k, v) in Catalog.Categories)
+          {
+            <option value="@k" selected="@(Model.V("category") == k)">@v</option>
+          }
+        </select>
+        @if (Model.Errors.TryGetValue("category", out var e2)) { <p class="field-error" id="err-category">@e2</p> }
+      </div>
+      <div>
+        <label for="priority">Prioridad</label>
+        <select id="priority" name="Priority" required aria-invalid="@(Model.Errors.ContainsKey("priority") ? "true" : null)" aria-describedby="@(Model.Errors.ContainsKey("priority") ? "err-priority" : null)">
+          @foreach (var (k, v) in Catalog.Priorities)
+          {
+            <option value="@k" selected="@(Model.V("priority") == k)">@v</option>
+          }
+        </select>
+        @if (Model.Errors.TryGetValue("priority", out var e3)) { <p class="field-error" id="err-priority">@e3</p> }
+      </div>
+    </div>
+
+    <label for="description">Descripción</label>
+    <textarea id="description" name="Description" rows="6" required maxlength="1000"
+              placeholder="Qué falla, desde cuándo, qué equipos y qué mensaje de error aparece."
+              aria-invalid="@(Model.Errors.ContainsKey("description") ? "true" : null)" aria-describedby="@(Model.Errors.ContainsKey("description") ? "err-description" : null)">@Model.V("description")</textarea>
+    @if (Model.Errors.TryGetValue("description", out var e4)) { <p class="field-error" id="err-description">@e4</p> }
+
+    <label for="responsible">Responsable <span class="muted">(opcional)</span></label>
+    <input id="responsible" name="Responsible" type="text" maxlength="80" list="responsables"
+           value="@Model.V("responsible")" aria-invalid="@(Model.Errors.ContainsKey("responsible") ? "true" : null)" aria-describedby="@(Model.Errors.ContainsKey("responsible") ? "err-responsible" : null)">
+    <datalist id="responsables">
+      <option value="Ana Mora"></option><option value="Luis Rojas"></option><option value="Equipo N1"></option>
+    </datalist>
+    @if (Model.Errors.TryGetValue("responsible", out var e5)) { <p class="field-error" id="err-responsible">@e5</p> }
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">@(Model.IsNew ? "Registrar incidente" : "Guardar cambios")</button>
+      @if (Model.IsNew)
+      {
+        <a class="btn btn-ghost" asp-controller="Incidents" asp-action="Index">Cancelar</a>
+      }
+      else
+      {
+        <a class="btn btn-ghost" asp-controller="Incidents" asp-action="Detail" asp-route-id="@Model.Incident!.Id">Cancelar</a>
+      }
+    </div>
+  </form>
+
+  <aside class="card assistant" aria-labelledby="assistant-title">
+    <h2 id="assistant-title">Asistente de triaje</h2>
+    <p class="muted">Propone categoría, prioridad y un primer paso de diagnóstico a partir de la descripción.
+      Funciona con reglas dentro de este servidor: no usa IA externa y la descripción no sale de aquí.
+      Es solo una propuesta: usted decide.</p>
+    <button type="button" id="btn-suggest" class="btn btn-secondary" data-url="/api/sugerir">Sugerir con el asistente</button>
+    <div id="suggest-panel" class="suggest-panel" role="status" aria-live="polite" hidden></div>
+  </aside>
+</div>

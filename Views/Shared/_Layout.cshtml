@@ -1,0 +1,63 @@
+@{
+    var controller = ViewContext.RouteData.Values["controller"] as string;
+    var action = ViewContext.RouteData.Values["action"] as string;
+    var authed = User.Identity?.IsAuthenticated == true;
+    var isAdmin = User.IsInRole(Catalog.Admin);
+    var flashMsg = (TempData["flash_msg"] ?? ViewData["flash_msg"]) as string;
+    var flashKind = (TempData["flash_kind"] ?? ViewData["flash_kind"]) as string ?? "info";
+    var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>@ViewData["Title"] · Portal de incidentes (demo)</title>
+  <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
+</head>
+<body>
+  <a class="skip" href="#main">Saltar al contenido</a>
+  <header class="topbar">
+    <div class="brand">Portal de incidentes <span class="tag">Prototipo · datos ficticios</span></div>
+    @if (authed)
+    {
+      <nav class="mainnav" aria-label="Principal">
+        <a asp-controller="Dashboard" asp-action="Index" aria-current="@(controller == "Dashboard" ? "page" : null)">Dashboard</a>
+        <a asp-controller="Incidents" asp-action="Index" aria-current="@(controller == "Incidents" && action != "New" ? "page" : null)">Incidentes</a>
+        @if (isAdmin)
+        {
+          <a asp-controller="Incidents" asp-action="New" aria-current="@(controller == "Incidents" && action == "New" ? "page" : null)">Nuevo incidente</a>
+        }
+      </nav>
+      <div class="bell" id="bell" data-feed="@Url.Action("Feed", "Notifications")" data-read="@Url.Action("MarkRead", "Notifications")" data-incidents="@Url.Action("Index", "Incidents")">
+        <button class="bell-btn" id="bell-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="bell-panel" aria-label="Notificaciones">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M12 2a6 6 0 0 0-6 6v3.6c0 .5-.2 1-.5 1.4L4 15.5V17h16v-1.5l-1.5-2.5c-.3-.4-.5-.9-.5-1.4V8a6 6 0 0 0-6-6zm0 20a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22z" fill="currentColor"/></svg>
+          <span class="bell-count" id="bell-count" hidden>0</span>
+        </button>
+        <div class="bell-panel" id="bell-panel" role="region" aria-label="Actividad reciente" hidden>
+          <div class="bell-head"><strong>Actividad reciente</strong><span class="muted small" id="bell-sub"></span></div>
+          <ul class="bell-list" id="bell-list"></ul>
+          <p class="bell-empty muted small" id="bell-empty" hidden>Aún no hay actividad.</p>
+        </div>
+      </div>
+      <form class="userbox" method="post" asp-controller="Account" asp-action="Logout">
+        <span class="who">@User.FindFirst("display_name")?.Value <em class="role">@(Catalog.Roles.GetValueOrDefault(role, role))</em></span>
+        <button class="btn btn-ghost" type="submit">Salir</button>
+      </form>
+    }
+  </header>
+
+  <main id="main">
+    @if (!string.IsNullOrEmpty(flashMsg))
+    {
+      <div class="flashes" role="status" aria-live="polite">
+        <p class="flash flash-@flashKind">@flashMsg</p>
+      </div>
+    }
+    @RenderBody()
+  </main>
+
+  <footer class="foot">Prototipo de selección. Todos los datos son ficticios. No se conecta a ningún sistema real.</footer>
+  <script src="~/js/app.js" asp-append-version="true" defer></script>
+</body>
+</html>

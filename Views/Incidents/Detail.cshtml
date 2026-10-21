@@ -1,0 +1,81 @@
+@model DetailVm
+@{
+    var inc = Model.Row.Incident;
+    var code = Fmt.Code(inc.Id);
+    var isAdmin = User.IsInRole(Catalog.Admin);
+    ViewData["Title"] = code;
+}
+<div class="page-head">
+  <h1>@code <partial name="_Stat" model="inc.Status" /> <partial name="_Pri" model="inc.Priority" />
+    @if (inc.ReopenCount > 0) { <span class="reopen" title="Veces reabierto">↻ reabierto @(inc.ReopenCount)×</span> }</h1>
+  <div class="head-actions">
+    <a class="btn btn-ghost" asp-controller="Incidents" asp-action="Index">← Volver</a>
+    @if (isAdmin && inc.Status != "cerrado")
+    {
+      <a class="btn btn-secondary" asp-controller="Incidents" asp-action="Edit" asp-route-id="@inc.Id">Editar</a>
+    }
+  </div>
+</div>
+
+<div class="detail-grid">
+  <section class="card">
+    <h2>Detalle</h2>
+    <dl class="facts">
+      <div><dt>Restaurante</dt><dd>@Model.Row.RestaurantName</dd></div>
+      <div><dt>Categoría</dt><dd>@Catalog.CategoryLabel(inc.Category)</dd></div>
+      <div><dt>Responsable</dt><dd>@(inc.Responsible == "" ? "— sin asignar" : inc.Responsible)</dd></div>
+      <div><dt>Creado</dt><dd>@Fmt.LocalDt(inc.CreatedAt)</dd></div>
+      <div><dt>Primera atención</dt><dd>@Fmt.LocalDt(inc.FirstResponseAt)@if (Model.Atencion != null) { <text> </text><span class="muted">(a los @Fmt.Duration(Model.Atencion))</span> }</dd></div>
+      <div><dt>Resuelto</dt><dd>@Fmt.LocalDt(inc.ResolvedAt)@if (Model.Solucion != null) { <text> </text><span class="muted">(a los @Fmt.Duration(Model.Solucion))</span> }</dd></div>
+      <div><dt>Cerrado</dt><dd>@Fmt.LocalDt(inc.ClosedAt)</dd></div>
+    </dl>
+    <h3>Descripción</h3>
+    <p class="prewrap">@inc.Description</p>
+    @if (inc.SuggestedCategory != null)
+    {
+      <p class="muted small">El asistente sugirió al crearlo:
+        @Catalog.CategoryLabel(inc.SuggestedCategory) / @Catalog.PriorityLabel(inc.SuggestedPriority).
+        @if (inc.SuggestedCategory == inc.Category && inc.SuggestedPriority == inc.Priority) { <text>Coincide con lo registrado.</text> }
+        else { <text>Lo registrado difiere (corrección manual).</text> }
+      </p>
+    }
+  </section>
+
+  <section class="card">
+    <h2>Acciones</h2>
+    @if (isAdmin)
+    {
+      var any = false;
+      foreach (var action in new[] { "gestionar", "resolver", "cerrar", "reabrir" })
+      {
+        if (!Catalog.Transitions[action].From.Contains(inc.Status)) { continue; }
+        any = true;
+        <form class="action-form" method="post" asp-controller="Incidents" asp-action="Transition" asp-route-id="@inc.Id">
+          <input type="hidden" name="action" value="@action">
+          <label for="note-@action">@(action == "reabrir" ? "Motivo de la reapertura" : "Nota (opcional)")</label>
+          <input id="note-@action" name="note" type="text" maxlength="300" required="@(action == "reabrir")" minlength="@(action == "reabrir" ? "5" : null)">
+          <button class="btn @(action == "reabrir" ? "btn-warn" : "btn-primary")" type="submit">@Catalog.TransitionLabels[action]</button>
+        </form>
+      }
+      if (!any) { <p class="muted">No hay acciones disponibles.</p> }
+    }
+    else
+    {
+      <p class="muted">Su rol (Consulta) es de solo lectura.</p>
+    }
+  </section>
+
+  <section class="card span-2">
+    <h2>Historial</h2>
+    <ol class="timeline">
+      @foreach (var e in Model.Events)
+      {
+        <li>
+          <span class="t-when">@Fmt.LocalDt(e.At)</span>
+          <span class="t-what"><strong>@Catalog.EventLabels.GetValueOrDefault(e.Action, e.Action)</strong> · @e.Actor</span>
+          @if (e.Detail != "") { <span class="t-detail">@e.Detail</span> }
+        </li>
+      }
+    </ol>
+  </section>
+</div>

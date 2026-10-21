@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>BkIncidentes</RootNamespace>
+    <!-- Permite ejecutar con un runtime más nuevo (9, 10…) si no tiene el 8 instalado. -->
+    <RollForward>LatestMajor</RollForward>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- Sin paquetes NuGet: solo el framework compartido de ASP.NET Core. -->
+
+
+</Project>

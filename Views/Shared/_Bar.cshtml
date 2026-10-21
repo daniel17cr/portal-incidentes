@@ -1,0 +1,3 @@
+@model BarVm
+@* Barra horizontal en SVG: usa atributos (no style="") para cumplir la CSP sin 'unsafe-inline'. *@
+<svg class="bar" viewBox="0 0 100 6" preserveAspectRatio="none" role="img" aria-label="@Model.Label"><rect class="bar-bg" width="100" height="6" rx="1"/><rect class="bar-fg" width="@Model.Pct" height="6" rx="1"/></svg>
